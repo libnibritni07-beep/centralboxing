@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'providers/alumno_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 
-void main() => runApp(const App());
+@pragma('vm:entry-point')
+void callbackDispatcher(){ Workmanager().executeTask((task, d) async { await NotificationService.checkAndNotify(); return Future.value(true); }); }
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  Workmanager().registerPeriodicTask("vencimientos","checkVencimientos", frequency: const Duration(hours: 24), initialDelay: const Duration(minutes: 1));
+  runApp(const App());
+}
 
 class App extends StatefulWidget { const App({super.key}); @override State<App> createState()=>_S(); }
 class _S extends State<App>{
