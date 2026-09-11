@@ -5,15 +5,99 @@ import '../services/notification_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-  @override Widget build(BuildContext context){
-    return Scaffold(appBar: AppBar(title: const Text('Ajustes')), body: ListView(children:[
-      ListTile(title: const Text('Probar notificación'), subtitle: const Text('Dispara check 3 días'), onTap: ()async{ await NotificationService.checkAndNotify(); if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Notificación enviada')));} ),
-      const Divider(),
-      ListTile(title: const Text('Exportar Backup JSON'), subtitle: const Text('Guarda en Descargas'), onTap: ()async{ final p=await BackupService.exportJson(); if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Backup: $p')));} ),
-      ListTile(title: const Text('Importar Backup JSON'), onTap: ()async{ final r=await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions:['json']); if(r!=null){ await BackupService.importJson(r.files.single.path!); if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Importado')));} }),
-      const Divider(),
-      ListTile(title: const Text('Exportar Deudores CSV'), onTap: ()async=>await BackupService.exportDeudoresCsv()),
-      ListTile(title: const Text('Exportar Deudores PDF'), onTap: ()async=>await BackupService.exportDeudoresPdf()),
-    ]));
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ajustes')),
+      body: ListView(
+        children: [
+          ListTile(
+            title: const Text('Probar notificación'),
+            subtitle: const Text('Dispara check 3 días'),
+            onTap: () async {
+              await NotificationService.checkAndNotify();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Notificación enviada')),
+                );
+              }
+            },
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('Exportar Backup JSON'),
+            subtitle: const Text('Guarda en Descargas'),
+            onTap: () async {
+              final p = await BackupService.exportJson();
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Backup: $p')));
+              }
+            },
+          ),
+          ListTile(
+            title: const Text('Importar Backup JSON'),
+            onTap: () async {
+              final r = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['json'],
+              );
+              if (r != null) {
+                await BackupService.importJson(r.files.single.path!);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Importado')));
+                }
+              }
+            },
+          ),
+          const Divider(),
+          const ListTile(
+            title: Text('Exportar CSV'),
+            subtitle: Text('Elige filtro'),
+          ),
+          ListTile(
+            title: const Text('CSV Todos'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresCsv(filtro: 'todos'),
+          ),
+          ListTile(
+            title: const Text('CSV Por vencer (≤3 días)'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresCsv(filtro: 'por_vencer'),
+          ),
+          ListTile(
+            title: const Text('CSV Vencidos'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresCsv(filtro: 'vencido'),
+          ),
+          const Divider(),
+          const ListTile(title: Text('Exportar PDF')),
+          ListTile(
+            title: const Text('PDF Todos'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresPdf(filtro: 'todos'),
+          ),
+          ListTile(
+            title: const Text('PDF Por vencer'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresPdf(filtro: 'por_vencer'),
+          ),
+          ListTile(
+            title: const Text('PDF Vencidos'),
+            onTap:
+                () async =>
+                    await BackupService.exportDeudoresPdf(filtro: 'vencido'),
+          ),
+        ],
+      ),
+    );
   }
 }
