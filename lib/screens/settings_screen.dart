@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import '../services/backup_service.dart';
 import '../services/notification_service.dart';
+import '../providers/theme_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -11,6 +13,7 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Ajustes')),
       body: ListView(
         children: [
+          Consumer<ThemeProvider>(builder: (_, th, __) => SwitchListTile(title: const Text('Modo oscuro'), value: th.mode==ThemeMode.dark, onChanged: (v)=>th.toggle(v))),
           ListTile(
             title: const Text('Probar notificación'),
             subtitle: const Text('Dispara check 3 días'),

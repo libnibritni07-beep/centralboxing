@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'providers/alumno_provider.dart';
+import 'providers/theme_provider.dart';
+import 'core/theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/auth_service.dart';
@@ -55,13 +57,16 @@ class _S extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AlumnoProvider(),
-      child: MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AlumnoProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(builder: (_, t, __) => MaterialApp(
         title: 'Central Boxing',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
-        ),
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: t.mode,
         home:
             loading
                 ? const Scaffold(
@@ -70,7 +75,7 @@ class _S extends State<App> {
                 : logged
                 ? const DashboardScreen()
                 : LoginScreen(onOk: () => setState(() => logged = true)),
-      ),
+      )),
     );
   }
 }
