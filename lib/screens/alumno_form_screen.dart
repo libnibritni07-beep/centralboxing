@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/alumno.dart';
 import '../providers/alumno_provider.dart';
@@ -16,23 +19,37 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
   late TextEditingController nombre, telefono, monto;
   DateTime fechaInscripcion = DateTime.now();
   DateTime? fechaNac;
+  String? fotoPath;
   @override void initState(){
     super.initState();
     final a=widget.alumno;
     nombre=TextEditingController(text:a?.nombre??'');
     telefono=TextEditingController(text:a?.telefono.replaceAll(RegExp(r'^\+52'),'')??'');
     monto=TextEditingController(text:a?.monto.toString()??'');
-    if(a!=null){ fechaInscripcion=a.fechaInscripcion; fechaNac=a.fechaNacimiento!=null?DateTime.parse(a.fechaNacimiento!):null; }
+    if(a!=null){ fechaInscripcion=a.fechaInscripcion; fechaNac=a.fechaNacimiento!=null?DateTime.parse(a.fechaNacimiento!):null; fotoPath=a.fotoPath; }
   }
   int get edadPrev{
     if(fechaNac==null) return 0;
     final hoy=DateTime.now(); int e=hoy.year-fechaNac!.year; if(hoy.month<fechaNac!.month||(hoy.month==fechaNac!.month&&hoy.day<fechaNac!.day)) e--; return e;
   }
   DateTime get vencimientoCalculado => PagoService.siguienteVencimiento(fechaInscripcion);
+  Future<void> _pickFoto() async {
+    showModalBottomSheet(context:context, builder:(_)=> SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children:[
+      ListTile(leading: const Icon(Icons.camera_alt, color: Color(0xFFD32F2F)), title: const Text('Tomar foto'), onTap: () async { Navigator.pop(context); final f=await ImagePicker().pickImage(source: ImageSource.camera, imageQuality:85); if(f!=null) setState(()=> fotoPath=f.path); }),
+      ListTile(leading: const Icon(Icons.photo), title: const Text('Elegir de galería'), onTap: () async { Navigator.pop(context); final f=await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality:85); if(f!=null) setState(()=> fotoPath=f.path); }),
+      if(fotoPath!=null) ListTile(leading: const Icon(Icons.delete), title: const Text('Eliminar foto'), onTap: ()=> setState(()=> fotoPath=null)),
+    ])));
+  }
+  Future<String?> _guardarFoto() async {
+    if(fotoPath==null) return widget.alumno?.fotoPath;
+    if(fotoPath==widget.alumno?.fotoPath) return fotoPath;
+    final dir=await getApplicationDocumentsDirectory(); final dest='${dir.path}/alumno_${DateTime.now().millisecondsSinceEpoch}.jpg'; await File(fotoPath!).copy(dest); return dest;
+  }
   Future<void> _save() async {
     if(!_form.currentState!.validate()) return;
     final tel='+52${telefono.text.replaceAll(RegExp(r'[^0-9]'), '')}';
-    final al=Alumno(id:widget.alumno?.id, nombre:nombre.text, telefono:tel, fechaInscripcion: fechaInscripcion, fechaVencimiento: vencimientoCalculado, monto:double.parse(monto.text), fechaNacimiento: fechaNac?.toIso8601String());
+    final savedFoto=await _guardarFoto();
+    final al=Alumno(id:widget.alumno?.id, nombre:nombre.text, telefono:tel, fechaInscripcion: fechaInscripcion, fechaVencimiento: vencimientoCalculado, monto:double.parse(monto.text), fechaNacimiento: fechaNac?.toIso8601String(), fotoPath: savedFoto);
     final prov=context.read<AlumnoProvider>();
     if(widget.alumno==null) await prov.add(al); else await prov.update(al);
     if(mounted) Navigator.pop(context);
@@ -46,7 +63,12 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
     if(d!=null) setState(()=>fechaNac=d);
   }
   @override Widget build(BuildContext context){
-    return Scaffold(appBar: AppBar(title: Text(widget.alumno==null?'NUEVO ALUMNO':'EDITAR ALUMNO'), centerTitle:true), body: Form(key:_form, child: ListView(padding: const EdgeInsets.all(16), children:[
+    return Scaffold(appBar: AppBar(title: Text(widget.alumno==null?'NUEVO ALUMNO':'EDITAR: ${widget.alumno!.nombre.toUpperCase()}'), centerTitle:true), body: Form(key:_form, child: ListView(padding: const EdgeInsets.all(16), children:[
+      Center(child: Stack(children:[
+        CircleAvatar(radius:50, backgroundImage: fotoPath!=null ? FileImage(File(fotoPath!)) : null, child: fotoPath==null ? const Icon(Icons.person, size:40) : null),
+        Positioned(bottom:0, right:0, child: FloatingActionButton.small(onPressed:_pickFoto, child: const Icon(Icons.camera_alt, size:18))),
+      ])),
+      const SizedBox(height:12),
       Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children:[
         const ListTile(leading: Icon(Icons.person, color: Color(0xFFD32F2F)), title: Text('DATOS PERSONALES', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing:1)), dense:true, contentPadding: EdgeInsets.zero),
         TextFormField(controller:nombre, decoration: const InputDecoration(labelText:'Nombre', prefixIcon: Icon(Icons.badge), border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))), filled:true), validator:(v)=>v!.isEmpty?'Requerido':null),
