@@ -28,10 +28,11 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
     if(fechaNac==null) return 0;
     final hoy=DateTime.now(); int e=hoy.year-fechaNac!.year; if(hoy.month<fechaNac!.month||(hoy.month==fechaNac!.month&&hoy.day<fechaNac!.day)) e--; return e;
   }
+  DateTime get vencimientoCalculado => PagoService.siguienteVencimiento(fechaInscripcion);
   Future<void> _save() async {
     if(!_form.currentState!.validate()) return;
     final tel='+52${telefono.text.replaceAll(RegExp(r'[^0-9]'), '')}';
-    final al=Alumno(id:widget.alumno?.id, nombre:nombre.text, telefono:tel, fechaInscripcion: fechaInscripcion, fechaVencimiento: fechaInscripcion, monto:double.parse(monto.text), fechaNacimiento: fechaNac?.toIso8601String());
+    final al=Alumno(id:widget.alumno?.id, nombre:nombre.text, telefono:tel, fechaInscripcion: fechaInscripcion, fechaVencimiento: vencimientoCalculado, monto:double.parse(monto.text), fechaNacimiento: fechaNac?.toIso8601String());
     final prov=context.read<AlumnoProvider>();
     if(widget.alumno==null) await prov.add(al); else await prov.update(al);
     if(mounted) Navigator.pop(context);
@@ -60,6 +61,8 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
         TextFormField(controller:monto, decoration: const InputDecoration(labelText:'Monto', prefixText:'\$ ', helperText:'Mensual fijo', prefixIcon: Icon(Icons.payments), border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))), filled:true), keyboardType:TextInputType.number, validator:(v)=>v!.isEmpty?'Requerido':null),
         const SizedBox(height:12),
         InkWell(onTap:_pickInscripcion, child: InputDecorator(decoration: const InputDecoration(labelText:'Fecha de inscripción', suffixIcon: Icon(Icons.calendar_today), helperText:'Hoy, modificable', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))), filled:true), child: Text(DateFormat('dd/MM/yyyy','es').format(fechaInscripcion), style: const TextStyle(fontWeight: FontWeight.bold)))),
+        const SizedBox(height:12),
+        InputDecorator(decoration: const InputDecoration(labelText:'Fecha de vencimiento', suffixIcon: Icon(Icons.lock, color: Colors.grey), helperText:'+1 mes (28/29/31 días) - solo lectura', border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))), filled:true, enabled:false), child: Text(DateFormat('dd/MM/yyyy','es').format(vencimientoCalculado), style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold))),
       ]))),
       const SizedBox(height:20),
       SizedBox(width: double.infinity, child: FilledButton.icon(icon: const Icon(Icons.save), label: const Text('GUARDAR'), onPressed:_save)),
