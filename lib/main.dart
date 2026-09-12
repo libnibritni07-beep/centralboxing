@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart' as fl;
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'providers/alumno_provider.dart';
@@ -19,6 +21,7 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es', null);
   await NotificationService.init();
   Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
   Workmanager().registerPeriodicTask(
@@ -67,6 +70,9 @@ class _S extends State<App> {
         theme: lightTheme,
         darkTheme: darkTheme,
         themeMode: t.mode,
+        locale: const Locale('es','MX'),
+        localizationsDelegates: const [fl.GlobalMaterialLocalizations.delegate, fl.GlobalWidgetsLocalizations.delegate, fl.GlobalCupertinoLocalizations.delegate],
+        supportedLocales: const [Locale('es','MX'), Locale('es')],
         home:
             loading
                 ? const Scaffold(
