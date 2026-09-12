@@ -1,32 +1,37 @@
-# Central Boxing 🥊 - App Gimnasio de Box
+# Central Boxing - App Gimnasio de Box
 
-App Android offline para gestión de alumnos y pagos mensuales.
+App Android offline para gestion de alumnos y pagos mensuales. 100% offline con BD local sqflite.
 
-## Características
-- Registro de alumnos (nombre, teléfono, monto, vencimiento, foto, fecha nacimiento opcional con edad automática)
-- Control de pagos mensuales con historial y semáforo (Al día / Por vencer ≤3 días / Vencido)
-- Cálculo de vencimiento inteligente +1 mes calendario (contempla 28/29/31 días)
-- Notificaciones locales diarias al admin (3 días antes)
-- Marcado de pago manual, renovación automática de vencimiento
-- Login admin único con PIN local
-- Botón recordatorio WhatsApp, export deudores CSV/PDF, backup/restore JSON
-- 100% offline con BD local `sqflite`
+## Caracteristicas
+- Registro de alumnos: nombre, telefono +52 fijo (10 digitos), monto, fecha inscripcion hoy editable, fecha vencimiento +1 mes solo lectura (28/29/31 dias), foto camara/galeria copia local, fecha nacimiento opcional con edad automatica
+- Control pagos mensuales con semaforo Al dia / Por vencer <=3 dias / Vencido
+- Historial pagos con registro Marcar Pagado y vencimiento inteligente
+- Notificaciones locales diarias al admin 3 dias antes (⏰ Tu cuota vence / 🚨 Tu cuota vencio) con Central Boxing
+- WhatsApp recordatorio con mensaje estructurado y emojis
+- Login admin unico PIN local 4 cajas con fondo gradiente y Hero logo
+- Dashboard SliverAppBar 80 CENTRAL BOXING 22 con StatsCard gradiente y filtros FilterChip scroll sin overflow
+- Ajustes: modo oscuro manual, probar notificacion, backup JSON, export deudores CSV/PDF (todos/por vencer/vencido)
+- Icono launcher y splash redondo transparente #111111 1.5s con Hero
 
 ## Requisitos
-- Flutter 3.x, Android SDK, Dart 3.x
+Flutter 3.29.3, Dart 3.7.2, Android SDK
 
-## Instalación
+## Instalacion
 ```bash
+git clone https://github.com/libnibritni07-beep/centralboxing.git
+cd C:/dev/centralboxing
 flutter pub get
 flutter run
-flutter build apk --release
+# o
+flutter build apk --debug
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
 ## Estructura
-Ver `PLAN.md` para modelo de datos y arquitectura detallada.
+lib/core/theme.dart, lib/providers/theme_provider.dart, lib/services/notification_service.dart (buildWhatsAppMessage), lib/screens/
 
-## Backup
-Ajustes -> Exportar Backup (.json en Descargas) / Importar Backup
+## Uso
+1. Crear PIN, agregar alumno con foto, inscripcion hoy, vencimiento +1 mes readonly, por vencer/vencidos en Dashboard, WhatsApp swipe, Ajustes export.
 
-## Licencia
-Uso privado Central Boxing.
+## Proyecto
+C:/dev/centralboxing fuera de OneDrive para evitar build corrupto.
