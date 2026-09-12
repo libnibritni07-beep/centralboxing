@@ -7,6 +7,7 @@ import '../providers/alumno_provider.dart';
 import '../services/pago_service.dart';
 import 'alumno_form_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/notification_service.dart';
 
 class AlumnoDetailScreen extends StatefulWidget {
   final Alumno alumno;
@@ -35,7 +36,7 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
         Row(children:[
           Expanded(child: FilledButton.icon(icon: const Icon(Icons.check), label: const Text('Marcar Pagado'), onPressed: ()async{ await PagoService.registrarPago(a.id!, a.monto); await context.read<AlumnoProvider>().load(); if(mounted){ ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Pago registrado'))); Navigator.pop(context);} })),
           const SizedBox(width:8),
-          Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.message), label: const Text('WhatsApp'), onPressed: ()async{ final txt='Hola ${a.nombre}! Te habla Central Boxing. Tu cuota vence el ${DateFormat('dd/MM/yyyy','es').format(a.fechaVencimiento)} Monto \$${a.monto}. Te esperamos!'; final wa=a.telefono.replaceAll(RegExp(r'[^0-9]'), ''); await launchUrl(Uri.parse('https://wa.me/$wa?text=${Uri.encodeComponent(txt)}'), mode: LaunchMode.externalApplication);})),
+          Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.message), label: const Text('WhatsApp'), onPressed: ()async{ final vencido=a.estado=='vencido'; final fecha=DateFormat('dd/MM/yyyy','es').format(a.fechaVencimiento); final txt=NotificationService.buildWhatsAppMessage(a.nombre, fecha, a.monto.toString(), vencido); final wa=a.telefono.replaceAll(RegExp(r'[^0-9]'), ''); await launchUrl(Uri.parse('https://wa.me/$wa?text=${Uri.encodeComponent(txt)}'), mode: LaunchMode.externalApplication);})),
         ]),
         const Divider(height:24),
         const Text('Historial de Pagos', style: TextStyle(fontWeight: FontWeight.bold)),
