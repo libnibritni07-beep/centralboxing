@@ -65,23 +65,30 @@ class _S extends State<App> {
         ChangeNotifierProvider(create: (_) => AlumnoProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: Consumer<ThemeProvider>(builder: (_, t, __) => MaterialApp(
-        title: 'Central Boxing',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: t.mode,
-        locale: const Locale('es','MX'),
-        localizationsDelegates: const [fl.GlobalMaterialLocalizations.delegate, fl.GlobalWidgetsLocalizations.delegate, fl.GlobalCupertinoLocalizations.delegate],
-        supportedLocales: const [Locale('es','MX'), Locale('es')],
-        home:
-            loading
-                ? const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                )
-                : logged
-                ? const DashboardScreen()
-                : LoginScreen(onOk: () => setState(() => logged = true)),
-      )),
+      child: Consumer<ThemeProvider>(
+        builder:
+            (_, t, __) => MaterialApp(
+              title: 'Central Boxing',
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: t.mode,
+              locale: const Locale('es', 'MX'),
+              localizationsDelegates: const [
+                fl.GlobalMaterialLocalizations.delegate,
+                fl.GlobalWidgetsLocalizations.delegate,
+                fl.GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('es', 'MX'), Locale('es')],
+              home:
+                  loading
+                      ? const Scaffold(
+                        body: Center(child: CircularProgressIndicator()),
+                      )
+                      : logged
+                      ? const DashboardScreen()
+                      : LoginScreen(onOk: () => setState(() => logged = true)),
+            ),
+      ),
     );
   }
 }
