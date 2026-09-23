@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import '../services/backup_service.dart';
 import '../services/notification_service.dart';
 import '../providers/theme_provider.dart';
@@ -13,6 +14,19 @@ class SettingsScreen extends StatefulWidget {
 
 class _S extends State<SettingsScreen> {
   String filtro = 'todos';
+  bool bioAvailable = false, bioEnabled = false;
+  @override
+  void initState() {
+    super.initState();
+    _loadBio();
+  }
+
+  Future<void> _loadBio() async {
+    final auth = AuthService();
+    bioAvailable = await auth.canUseBiometrics();
+    bioEnabled = await auth.isBiometricEnabled();
+    if (mounted) setState(() {});
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,6 +60,49 @@ class _S extends State<SettingsScreen> {
                           value: th.mode == ThemeMode.dark,
                           onChanged: (v) => th.toggle(v),
                         ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ListTile(
+                    leading: Icon(Icons.lock, color: Color(0xFFD32F2F)),
+                    title: Text(
+                      'SEGURIDAD',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    dense: true,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.fingerprint),
+                    title: const Text('Desbloqueo con huella'),
+                    subtitle: Text(
+                      bioAvailable
+                          ? 'PIN sigue disponible como respaldo'
+                          : 'No disponible en este dispositivo',
+                    ),
+                    value: bioEnabled && bioAvailable,
+                    onChanged:
+                        !bioAvailable
+                            ? null
+                            : (v) async {
+                              if (v) {
+                                final ok =
+                                    await AuthService().authenticate();
+                                if (!ok) return;
+                              }
+                              await AuthService().setBiometricEnabled(v);
+                              setState(() => bioEnabled = v);
+                            },
                   ),
                 ],
               ),

@@ -30,4 +30,45 @@ void main() {
       DateTime(2026, 3, 28),
     ),
   );
+  test(
+    'recalcular 0 restantes: insc 10/01 -> 10/02',
+    () => expect(
+      PagoService.recalcularVencimiento(DateTime(2026, 1, 10), 0),
+      DateTime(2026, 2, 10),
+    ),
+  );
+  test(
+    'recalcular 1 restante: insc 10/01 -> 10/03',
+    () => expect(
+      PagoService.recalcularVencimiento(DateTime(2026, 1, 10), 1),
+      DateTime(2026, 3, 10),
+    ),
+  );
+  test(
+    'recalcular 0 restantes fin de mes: 31/01 -> 28/02',
+    () => expect(
+      PagoService.recalcularVencimiento(DateTime(2026, 1, 31), 0),
+      DateTime(2026, 2, 28),
+    ),
+  );
+  test(
+    'recalcular bisiesto: 31/01/2024 +0 -> 29/02, +1 -> 29/03',
+    () {
+      expect(
+        PagoService.recalcularVencimiento(DateTime(2024, 1, 31), 0),
+        DateTime(2024, 2, 29),
+      );
+      expect(
+        PagoService.recalcularVencimiento(DateTime(2024, 1, 31), 1),
+        DateTime(2024, 3, 29),
+      );
+    },
+  );
+  test(
+    'recalcular cambio de año: insc 15/12 +0 -> 15/01/2026',
+    () => expect(
+      PagoService.recalcularVencimiento(DateTime(2025, 12, 15), 0),
+      DateTime(2026, 1, 15),
+    ),
+  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../core/constants.dart';
 import '../db/database_helper.dart';
 import 'package:intl/intl.dart';
 
@@ -97,5 +98,9 @@ class NotificationService {
     } else {
       return '👋 Hola $nombre!\n\n⏰ *Tu cuota vence* el *$fecha* 🗓️\n💳 Monto: *\$$monto*\n📍 Central Boxing 🥊\n\n¡Te esperamos para seguir entrenando! 💪';
     }
+  }
+
+  static String buildWelcomeMessage(String nombre) {
+    return '👋 ¡Hola $nombre! 🥊\n\n🎉 *Bienvenido(a) a la familia Central Boxing Tehuacán* 🎉\n\nTe invito a unirte a nuestro grupo de WhatsApp para estar al tanto de sparrings, avisos, eventos y más 👇\n\n$kGrupoWhatsApp\n\n¡Nos vemos en el gym! 💪';
   }
 }

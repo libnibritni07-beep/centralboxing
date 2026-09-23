@@ -17,6 +17,97 @@ class AlumnoDetailScreen extends StatefulWidget {
 }
 
 class _AlumnoDetailState extends State<AlumnoDetailScreen> {
+  Future<void> _confirmEliminarPago(
+    BuildContext context,
+    int pagoId,
+    double monto,
+    DateTime fecha,
+  ) async {
+    final c = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Eliminar pago'),
+            content: Text(
+              '¿Eliminar el pago de \$$monto del ${DateFormat('dd/MM/yyyy', 'es').format(fecha)}?\n\n¿Estás seguro?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+    );
+    if (c != true || !mounted) return;
+    await PagoService.eliminarPago(pagoId, widget.alumno.id!);
+    await context.read<AlumnoProvider>().load();
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pago eliminado')));
+    }
+  }
+
+  Future<void> _abrirWhatsApp(String telefono, String mensaje) async {
+    final wa = telefono.replaceAll(RegExp(r'[^0-9]'), '');
+    await launchUrl(
+      Uri.parse('https://wa.me/$wa?text=${Uri.encodeComponent(mensaje)}'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  Future<void> _opcionesWhatsApp(BuildContext context, Alumno a) async {
+    final vencido = a.estado == 'vencido';
+    final fecha = DateFormat('dd/MM/yyyy', 'es').format(a.fechaVencimiento);
+    final pago = NotificationService.buildWhatsAppMessage(
+      a.nombre,
+      fecha,
+      a.monto.toString(),
+      vencido,
+    );
+    if (!context.mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      builder:
+          (_) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.payments),
+                  title: const Text('Recordatorio de pago'),
+                  subtitle: Text(
+                    vencido ? 'Cuota vencida el $fecha' : 'Vence el $fecha',
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _abrirWhatsApp(a.telefono, pago);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.group_add),
+                  title: const Text('Bienvenida + grupo'),
+                  subtitle: const Text('Familia Central Boxing Tehuacán'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _abrirWhatsApp(
+                      a.telefono,
+                      NotificationService.buildWelcomeMessage(a.nombre),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = widget.alumno;
@@ -24,9 +115,11 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 250,
             pinned: true,
+            title: Text(a.nombre),
             flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -35,59 +128,66 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    GestureDetector(
-                      onTap:
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => FullScreenFoto(
-                                    path: a.fotoPath,
-                                    nombre: a.nombre,
-                                  ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => FullScreenFoto(
+                                        path: a.fotoPath,
+                                        nombre: a.nombre,
+                                      ),
+                                ),
+                              ),
+                          child: Hero(
+                            tag: 'alumno${a.id}',
+                            child: CircleAvatar(
+                              radius: 42,
+                              backgroundImage:
+                                  a.fotoPath != null
+                                      ? FileImage(File(a.fotoPath!))
+                                      : null,
+                              child:
+                                  a.fotoPath == null
+                                      ? const Icon(Icons.person, size: 42)
+                                      : null,
                             ),
                           ),
-                      child: Hero(
-                        tag: 'alumno${a.id}',
-                        child: CircleAvatar(
-                          radius: 48,
-                          backgroundImage:
-                              a.fotoPath != null
-                                  ? FileImage(File(a.fotoPath!))
-                                  : null,
-                          child:
-                              a.fotoPath == null
-                                  ? const Icon(Icons.person, size: 48)
-                                  : null,
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          a.nombre,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Chip(
+                          label: Text(
+                            a.estado,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor:
+                              a.estado == 'vencido'
+                                  ? Colors.red
+                                  : a.estado == 'por_vencer'
+                                  ? Colors.orange
+                                  : Colors.green,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      a.nombre,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    Chip(
-                      label: Text(
-                        a.estado,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      backgroundColor:
-                          a.estado == 'vencido'
-                              ? Colors.red
-                              : a.estado == 'por_vencer'
-                              ? Colors.orange
-                              : Colors.green,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -197,30 +297,7 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.message),
                           label: const Text('WhatsApp'),
-                          onPressed: () async {
-                            final vencido = a.estado == 'vencido';
-                            final fecha = DateFormat(
-                              'dd/MM/yyyy',
-                              'es',
-                            ).format(a.fechaVencimiento);
-                            final txt =
-                                NotificationService.buildWhatsAppMessage(
-                                  a.nombre,
-                                  fecha,
-                                  a.monto.toString(),
-                                  vencido,
-                                );
-                            final wa = a.telefono.replaceAll(
-                              RegExp(r'[^0-9]'),
-                              '',
-                            );
-                            await launchUrl(
-                              Uri.parse(
-                                'https://wa.me/$wa?text=${Uri.encodeComponent(txt)}',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                            );
-                          },
+                          onPressed: () => _opcionesWhatsApp(context, a),
                         ),
                       ),
                     ],
@@ -257,6 +334,20 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
                                     ),
                                     subtitle: Text(
                                       '${DateFormat('dd/MM/yyyy', 'es').format(p.fechaPago)} ${p.metodo ?? ''}',
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red,
+                                      ),
+                                      tooltip: 'Eliminar pago',
+                                      onPressed:
+                                          () => _confirmEliminarPago(
+                                            context,
+                                            p.id!,
+                                            p.monto,
+                                            p.fechaPago,
+                                          ),
                                     ),
                                   ),
                                 )

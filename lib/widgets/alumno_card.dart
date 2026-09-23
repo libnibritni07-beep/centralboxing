@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/alumno.dart';
@@ -25,10 +26,15 @@ class AlumnoCard extends StatelessWidget {
           tag: 'alumno${a.id}',
           child: CircleAvatar(
             backgroundColor: c,
-            child: Text(
-              a.nombre[0].toUpperCase(),
-              style: const TextStyle(color: Colors.white),
-            ),
+            backgroundImage:
+                a.fotoPath != null ? FileImage(File(a.fotoPath!)) : null,
+            child:
+                a.fotoPath == null
+                    ? Text(
+                      a.nombre[0].toUpperCase(),
+                      style: const TextStyle(color: Colors.white),
+                    )
+                    : null,
           ),
         ),
         title: Text(

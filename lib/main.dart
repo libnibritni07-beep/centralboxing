@@ -68,6 +68,7 @@ class _S extends State<App> {
       child: Consumer<ThemeProvider>(
         builder:
             (_, t, __) => MaterialApp(
+              debugShowCheckedModeBanner: false,
               title: 'Central Boxing',
               theme: lightTheme,
               darkTheme: darkTheme,
@@ -85,7 +86,9 @@ class _S extends State<App> {
                         body: Center(child: CircularProgressIndicator()),
                       )
                       : logged
-                      ? const DashboardScreen()
+                      ? DashboardScreen(
+                        onLogout: () => setState(() => logged = false),
+                      )
                       : LoginScreen(onOk: () => setState(() => logged = true)),
             ),
       ),

@@ -6,6 +6,7 @@ class AlumnoProvider extends ChangeNotifier {
   List<Alumno> _all = [];
   String query = '';
   String filtro = 'todos'; // todos, al_dia, por_vencer, vencido
+  String orden = 'vencimiento'; // vencimiento | nombre | inscripcion
   List<Alumno> get alumnos {
     var l = _all.where((a) => a.activo == 1).toList();
     if (query.isNotEmpty) {
@@ -17,7 +18,28 @@ class AlumnoProvider extends ChangeNotifier {
               .toList();
     }
     if (filtro != 'todos') l = l.where((a) => a.estado == filtro).toList();
+    switch (orden) {
+      case 'nombre':
+        l.sort(
+          (a, b) =>
+              a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase()),
+        );
+        break;
+      case 'inscripcion':
+        l.sort((a, b) => b.fechaInscripcion.compareTo(a.fechaInscripcion));
+        break;
+      case 'vencimiento':
+      default:
+        l.sort((a, b) => a.fechaVencimiento.compareTo(b.fechaVencimiento));
+        break;
+    }
     return l;
+  }
+
+  void setOrden(String v) {
+    if (orden == v) return;
+    orden = v;
+    notifyListeners();
   }
 
   int get countAlDia =>

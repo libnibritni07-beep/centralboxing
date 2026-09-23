@@ -11,7 +11,8 @@ import '../services/notification_service.dart';
 import 'settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final VoidCallback? onLogout;
+  const DashboardScreen({super.key, this.onLogout});
   @override
   State<DashboardScreen> createState() => _S();
 }
@@ -25,6 +26,30 @@ class _S extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _confirmLogout() async {
+    final c = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Cerrar sesión'),
+            content: const Text(
+              '¿Cerrar sesión? Tendrás que ingresar tu PIN o huella.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Cerrar sesión'),
+              ),
+            ],
+          ),
+    );
+    if (c == true) widget.onLogout?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AlumnoProvider>();
@@ -35,6 +60,11 @@ class _S extends State<DashboardScreen> {
             pinned: true,
             expandedHeight: 80,
             centerTitle: true,
+            leading: IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Cerrar sesión',
+              onPressed: _confirmLogout,
+            ),
             title: Row(
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -135,28 +165,48 @@ class _S extends State<DashboardScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
-                children:
-                    ['todos', 'al_dia', 'por_vencer', 'vencido']
-                        .map(
-                          (f) => Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: FilterChip(
-                              label: Text(
-                                f.replaceAll('_', ' '),
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              selected: p.filtro == f,
-                              onSelected: (_) {
-                                p.filtro = f;
-                                p.load();
-                              },
-                              selectedColor: const Color(
-                                0xFFD32F2F,
-                              ).withValues(alpha: 0.2),
-                            ),
+                children: [
+                  ...['todos', 'al_dia', 'por_vencer', 'vencido'].map(
+                    (f) => Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: FilterChip(
+                        label: Text(
+                          f.replaceAll('_', ' '),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        selected: p.filtro == f,
+                        onSelected: (_) {
+                          p.filtro = f;
+                          p.load();
+                        },
+                        selectedColor: const Color(
+                          0xFFD32F2F,
+                        ).withValues(alpha: 0.2),
+                      ),
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    tooltip: 'Ordenar',
+                    icon: const Icon(Icons.sort),
+                    initialValue: p.orden,
+                    onSelected: (v) => p.setOrden(v),
+                    itemBuilder:
+                        (_) => const [
+                          PopupMenuItem(
+                            value: 'vencimiento',
+                            child: Text('Por vencimiento'),
                           ),
-                        )
-                        .toList(),
+                          PopupMenuItem(
+                            value: 'nombre',
+                            child: Text('Alfabético (A–Z)'),
+                          ),
+                          PopupMenuItem(
+                            value: 'inscripcion',
+                            child: Text('Más recientes'),
+                          ),
+                        ],
+                  ),
+                ],
               ),
             ),
           ),

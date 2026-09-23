@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import '../core/fecha_mask_formatter.dart';
 import '../models/alumno.dart';
 import '../providers/alumno_provider.dart';
 import '../services/pago_service.dart';
@@ -19,9 +20,13 @@ class AlumnoFormScreen extends StatefulWidget {
 class _AlumnoFormState extends State<AlumnoFormScreen> {
   final _form = GlobalKey<FormState>();
   late TextEditingController nombre, telefono, monto;
+  late TextEditingController fechaNacCtrl, fechaInscCtrl;
   DateTime fechaInscripcion = DateTime.now();
   DateTime? fechaNac;
   String? fotoPath;
+
+  static String _fmt(DateTime d) => DateFormat('dd/MM/yyyy', 'es').format(d);
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +42,44 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
           a.fechaNacimiento != null ? DateTime.parse(a.fechaNacimiento!) : null;
       fotoPath = a.fotoPath;
     }
+    fechaInscCtrl = TextEditingController(text: _fmt(fechaInscripcion));
+    fechaNacCtrl = TextEditingController(
+      text: fechaNac == null ? '' : _fmt(fechaNac!),
+    );
+    fechaInscCtrl.addListener(_syncInscFromText);
+    fechaNacCtrl.addListener(_syncNacFromText);
+  }
+
+  @override
+  void dispose() {
+    nombre.dispose();
+    telefono.dispose();
+    monto.dispose();
+    fechaNacCtrl.dispose();
+    fechaInscCtrl.dispose();
+    super.dispose();
+  }
+
+  void _syncInscFromText() {
+    final d = parseFecha(fechaInscCtrl.text);
+    if (d != null && d != fechaInscripcion) {
+      setState(() => fechaInscripcion = d);
+    }
+  }
+
+  void _syncNacFromText() {
+    final t = fechaNacCtrl.text.trim();
+    final d = t.isEmpty ? null : parseFecha(t);
+    if (d != fechaNac) {
+      setState(() => fechaNac = d);
+    }
+  }
+
+  void _syncFechasFromText() {
+    final insc = parseFecha(fechaInscCtrl.text);
+    if (insc != null) fechaInscripcion = insc;
+    final t = fechaNacCtrl.text.trim();
+    fechaNac = t.isEmpty ? null : parseFecha(t);
   }
 
   int get edadPrev {
@@ -110,6 +153,7 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
   }
 
   Future<void> _save() async {
+    _syncFechasFromText();
     if (!_form.currentState!.validate()) return;
     final tel = '+52${telefono.text.replaceAll(RegExp(r'[^0-9]'), '')}';
     final savedFoto = await _guardarFoto();
@@ -144,7 +188,10 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       initialDate: fechaInscripcion,
     );
-    if (d != null) setState(() => fechaInscripcion = d);
+    if (d != null) {
+      fechaInscCtrl.text = _fmt(d);
+      setState(() => fechaInscripcion = d);
+    }
   }
 
   Future<void> _pickNacimiento() async {
@@ -159,7 +206,10 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
       lastDate: DateTime.now(),
       initialDate: fechaNac ?? DateTime(2000, 1, 1),
     );
-    if (d != null) setState(() => fechaNac = d);
+    if (d != null) {
+      fechaNacCtrl.text = _fmt(d);
+      setState(() => fechaNac = d);
+    }
   }
 
   @override
@@ -256,42 +306,66 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _pickNacimiento,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Fecha de nacimiento (opcional)',
-                          prefixIcon: Icon(Icons.cake),
-                          suffixIcon: Icon(Icons.calendar_month),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                          ),
-                          filled: true,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    TextFormField(
+                      controller: fechaNacCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de nacimiento (opcional)',
+                        hintText: 'dd/mm/aaaa',
+                        prefixIcon: const Icon(Icons.cake),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              fechaNac == null
-                                  ? 'Sin fecha'
-                                  : DateFormat(
-                                    'dd/MM/yyyy',
-                                    'es',
-                                  ).format(fechaNac!),
-                              style: TextStyle(
-                                color:
-                                    fechaNac == null ? Colors.grey[600] : null,
+                            if (fechaNacCtrl.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear),
+                                tooltip: 'Limpiar',
+                                onPressed:
+                                    () => setState(
+                                      () => fechaNacCtrl.clear(),
+                                    ),
                               ),
+                            IconButton(
+                              icon: const Icon(Icons.calendar_month),
+                              tooltip: 'Elegir del calendario',
+                              onPressed: _pickNacimiento,
                             ),
-                            if (fechaNac != null)
-                              Chip(
-                                label: Text('$edadPrev años'),
-                                visualDensity: VisualDensity.compact,
-                              ),
                           ],
                         ),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
+                        filled: true,
                       ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        FechaMaskFormatter(),
+                      ],
+                      validator: (v) {
+                        final t = v?.trim() ?? '';
+                        if (t.isEmpty) return null;
+                        final d = parseFecha(t);
+                        if (d == null) {
+                          return 'Fecha inválida (dd/mm/aaaa)';
+                        }
+                        if (d.isBefore(DateTime(1940)) ||
+                            d.isAfter(DateTime.now())) {
+                          return 'Fuera de rango';
+                        }
+                        return null;
+                      },
                     ),
+                    if (fechaNac != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Chip(
+                            label: Text('$edadPrev años'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -334,33 +408,47 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
                       validator: (v) => v!.isEmpty ? 'Requerido' : null,
                     ),
                     const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _pickInscripcion,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Fecha de inscripción',
-                          suffixIcon: Icon(Icons.calendar_today),
-                          helperText: 'Hoy, modificable',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                          ),
-                          filled: true,
+                    TextFormField(
+                      controller: fechaInscCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Fecha de inscripción',
+                        hintText: 'dd/mm/aaaa',
+                        helperText: 'Hoy, modificable',
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today),
+                          tooltip: 'Elegir del calendario',
+                          onPressed: _pickInscripcion,
                         ),
-                        child: Text(
-                          DateFormat(
-                            'dd/MM/yyyy',
-                            'es',
-                          ).format(fechaInscripcion),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
                         ),
+                        filled: true,
                       ),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        FechaMaskFormatter(),
+                      ],
+                      validator: (v) {
+                        final d = parseFecha(v ?? '');
+                        if (d == null) {
+                          return 'Fecha inválida (dd/mm/aaaa)';
+                        }
+                        if (d.isBefore(DateTime(2020)) ||
+                            d.isAfter(
+                              DateTime.now().add(const Duration(days: 365)),
+                            )) {
+                          return 'Fuera de rango';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
                     InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Fecha de vencimiento',
                         suffixIcon: Icon(Icons.lock, color: Colors.grey),
-                        helperText: '+1 mes (28/29/31 días) - solo lectura',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.all(Radius.circular(12)),
                         ),
