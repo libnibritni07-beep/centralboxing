@@ -355,6 +355,11 @@ class _AlumnoDetailState extends State<AlumnoDetailScreen> {
                       );
                     },
                   ),
+                  // El ultimo pago nunca queda bajo la barra del sistema:
+                  // con botones reserva su altura, con gestos solo 16.
+                  SizedBox(
+                    height: MediaQuery.paddingOf(context).bottom + 16,
+                  ),
                 ],
               ),
             ),

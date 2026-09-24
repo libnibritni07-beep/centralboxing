@@ -272,6 +272,9 @@ class _S extends State<SettingsScreen> {
               style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
           ),
+          // La ultima tarjeta nunca queda bajo la barra del sistema:
+          // con botones reserva su altura, con gestos solo 12.
+          SizedBox(height: MediaQuery.paddingOf(context).bottom + 12),
         ],
       ),
     );

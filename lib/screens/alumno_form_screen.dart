@@ -223,6 +223,21 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
         ),
         centerTitle: true,
       ),
+      bottomNavigationBar: SafeArea(
+        // Fijo sobre la barra del sistema: con botones fisicos el SafeArea
+        // reserva su altura, con gestos aporta 0. Mismo codigo, ambos modos.
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              icon: const Icon(Icons.save),
+              label: const Text('GUARDAR'),
+              onPressed: _save,
+            ),
+          ),
+        ),
+      ),
       body: Form(
         key: _form,
         child: ListView(
@@ -470,15 +485,9 @@ class _AlumnoFormState extends State<AlumnoFormScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.save),
-                label: const Text('GUARDAR'),
-                onPressed: _save,
-              ),
-            ),
+            // Espacio final para que el ultimo campo nunca quede bajo
+            // la barra del sistema (botones) ni pegado al borde (gestos).
+            SizedBox(height: MediaQuery.paddingOf(context).bottom + 20),
           ],
         ),
       ),
